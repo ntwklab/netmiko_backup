@@ -59,7 +59,7 @@ def ip_list(ips_list):
     print("\n")
 
 
-def config(device, error_ips):
+def config(device, backup_list, error_ips):
 
     while True:
         device = q.get()
@@ -71,34 +71,31 @@ def config(device, error_ips):
             prompt = connection.find_prompt()
             hostname = prompt[0:-1]
             host_ip = device["host"]
-            print(f"Hostname: {hostname}\nIP Address: {host_ip}")
 
             # Enable Mode Check
             prompt = connection.find_prompt()
             if ">" in prompt:
-                print("Entering the enable mode ...")
                 connection.enable()
 
-            print("Show Running Config...\n")
             output = connection.send_command("sh run")
-            print("Output gathered...")
 
             # Closing the connection
-            print("Closing connection\n")
             connection.disconnect()
 
             now = datetime.now()
             year = now.year
             month = now.month
             day = now.day
-
             file_name = f"{hostname}_{year}-{month}-{day}_backup.cfg"
 
             with open(file_name, "w") as f:
                 f.write(output)
 
-            print(f"Backup cereated: {file_name}")
-            print("#" * 30 +"\n")
+            backup_dict = {"IP Address":host_ip, 
+                            "Hostname":hostname, 
+                            "File Name":file_name} 
+            backup_list.append(backup_dict)  
+
 
         except:
             error = device["host"]
@@ -113,7 +110,6 @@ def config(device, error_ips):
 if __name__ == '__main__':
 
     startTime = time.time()
-
     basedir = os.path.abspath(os.path.dirname(__file__))
 
     # Open CSV
@@ -123,11 +119,11 @@ if __name__ == '__main__':
     device_list,ips_list = create_device_list(csv_data)
     ip_list(ips_list)
 
-
     q = queue.Queue()
+    backup_list = []
     error_ips = []
     for thread_no in range(8):
-        worker = Thread(target=config, args=(q, error_ips, ), daemon=True)
+        worker = Thread(target=config, args=(q, backup_list, error_ips, ), daemon=True)
         worker.start()
 
     for device in device_list:
@@ -137,11 +133,19 @@ if __name__ == '__main__':
 
 
     # Print IPs with errors
+    print("\n")
+    print("*"*60)
     if error_ips != []:
         for ip in error_ips:
             print(f"Error connecting to {ip}")
             with open ("Backup_Connection_Error_IPs.txt", "a") as f:
                 f.write(ip + "\n")
-    
+
+    # Print Backups
+    print("\n")
+    for device in backup_list:
+        print(f"Successfully performed backup on:\t{device['Hostname']}\t{device['IP Address']}\t file: {device['File Name']}")
+    print("*"*60)
+
     executionTime = (time.time() - startTime)
     print('Execution time in seconds: ' + str(executionTime))
