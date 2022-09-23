@@ -5,5 +5,8 @@ IP Address,Hostname,Username
 192.168.122.105,R4,admin
 192.168.122.107,R5,admin
 192.168.122.104,NX1_v7,admin
+192.168.122.115,NX2_v7,admin
+192.168.122.118,NX5_v7,admin
+192.168.122.119,NX6_v7,admin
 192.168.122.123,NX3_v9,admin
 192.168.122.124,NX4_v9,admin
